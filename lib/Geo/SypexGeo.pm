@@ -202,7 +202,7 @@ This module now is detect only city name and don't use any features to speed up 
 =head1 SOURCE AVAILABILITY
 
 The source code for this module is available from Github
-at https://github.com/kak-tus/Geo-SypexGeo.git
+at https://github.com/kak-tus/Geo-SypexGeo
 
 =head1 AUTHOR
 
