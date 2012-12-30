@@ -1,0 +1,5 @@
+data/SxGeoCity.dat
+lib/Geo/SypexGeo.pm
+Makefile.PL
+MANIFEST
+t/01-test.t
