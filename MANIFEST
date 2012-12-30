@@ -3,3 +3,5 @@ lib/Geo/SypexGeo.pm
 Makefile.PL
 MANIFEST
 t/01-test.t
+t/02-test.t
+
