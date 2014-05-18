@@ -26,7 +26,7 @@ sub new {
   my $class = shift;
   my $file  = shift;
 
-  my $me = fields::new( $class );
+  my $self = fields::new( $class );
 
   open( my $fl, $file ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
@@ -40,50 +40,50 @@ sub new {
 
   if ( $info[15] ) {
     read $fl, my $pack, $info[15];
-    $me->{pack} = [ split "\0", $pack ];
+    $self->{pack} = [ split "\0", $pack ];
   }
 
-  read $fl, $me->{b_idx_str}, $info[ 4 ] * 4;
-  read $fl, $me->{m_idx_str}, $info[ 5 ] * 4;
+  read $fl, $self->{b_idx_str}, $info[ 4 ] * 4;
+  read $fl, $self->{m_idx_str}, $info[ 5 ] * 4;
 
-  $me->{range}        = $info[6];
-  $me->{b_idx_len}    = $info[4];
-  $me->{m_idx_len}    = $info[5];
-  $me->{db_items}     = $info[7];
-  $me->{id_len}       = $info[8];
-  $me->{block_len}    = 3 + $me->{id_len};
-  $me->{max_region}   = $info[9];
-  $me->{max_city}     = $info[10];
-  $me->{max_country}  = $info[13];
-  $me->{country_size} = $info[14];
+  $self->{range}        = $info[6];
+  $self->{b_idx_len}    = $info[4];
+  $self->{m_idx_len}    = $info[5];
+  $self->{db_items}     = $info[7];
+  $self->{id_len}       = $info[8];
+  $self->{block_len}    = 3 + $self->{id_len};
+  $self->{max_region}   = $info[9];
+  $self->{max_city}     = $info[10];
+  $self->{max_country}  = $info[13];
+  $self->{country_size} = $info[14];
 
-  $me->{db_begin} = tell $fl;
+  $self->{db_begin} = tell $fl;
 
-  $me->{regions_begin} = $me->{db_begin} + $me->{db_items} * $me->{block_len};
-  $me->{cities_begin} = $me->{regions_begin} + $info[ 11 ];
+  $self->{regions_begin} = $self->{db_begin} + $self->{db_items} * $self->{block_len};
+  $self->{cities_begin} = $self->{regions_begin} + $info[ 11 ];
 
-  $me->{db_file} = $file;
+  $self->{db_file} = $file;
 
   close $fl;
 
-  return $me;
+  return $self;
 }
 
 sub get_city {
-  my $me = shift;
+  my $self = shift;
   my $ip = shift;
 
-  my $seek = $me->get_num( $ip );
+  my $seek = $self->get_num( $ip );
   return unless $seek;
 
-  my $city = $me->parse_city( $seek );
+  my $city = $self->parse_city( $seek );
   return unless $city;
 
   return decode_utf8( $city );
 }
 
 sub get_num {
-  my $me = shift;
+  my $self = shift;
   my $ip = shift;
 
   my $ip1n;
@@ -92,20 +92,20 @@ sub get_num {
     $ip1n = int $ip;
   }
 
-  return undef if !$ip1n || $ip1n == 10 || $ip1n == 127 || $ip1n >= $me->{ 'b_idx_len' };
+  return undef if !$ip1n || $ip1n == 10 || $ip1n == 127 || $ip1n >= $self->{ 'b_idx_len' };
   my $ipn = ip2long( $ip );
   $ipn = pack( 'N', $ipn );
 
-  my @blocks = unpack "NN", substr( $me->{ 'b_idx_str' } , ( $ip1n - 1 ) * 4, 8 );
+  my @blocks = unpack "NN", substr( $self->{ 'b_idx_str' } , ( $ip1n - 1 ) * 4, 8 );
 
   my $min;
   my $max;
 
-  if ( $blocks[1] - $blocks[0] > $me->{range} ) {
-    my $part = $me->search_idx( $ipn, floor( $blocks[ 0 ] / $me->{ 'range' } ), floor( $blocks[ 1 ] / $me->{ 'range' } ) - 1 );
+  if ( $blocks[1] - $blocks[0] > $self->{range} ) {
+    my $part = $self->search_idx( $ipn, floor( $blocks[ 0 ] / $self->{ 'range' } ), floor( $blocks[ 1 ] / $self->{ 'range' } ) - 1 );
 
-    $min = $part > 0 ? $part * $me->{ 'range' } : 0;
-    $max = $part > $me->{ 'm_idx_len' } ? $me->{ 'db_items' } : ( $part + 1 ) * $me->{ 'range' };
+    $min = $part > 0 ? $part * $self->{ 'range' } : 0;
+    $max = $part > $self->{ 'm_idx_len' } ? $self->{ 'db_items' } : ( $part + 1 ) * $self->{ 'range' };
 
     $min = $blocks[ 0 ] if $min < $blocks[ 0 ];
     $max = $blocks[ 1 ] if $max > $blocks[ 1];
@@ -117,17 +117,17 @@ sub get_num {
 
   my $len = $max - $min;
 
-  open( my $fl, $me->{ 'db_file' } ) || croak( 'Could not open db file' );
+  open( my $fl, $self->{ 'db_file' } ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
-  seek $fl, $me->{ 'db_begin' } + $min * $me->{ 'block_len' }, 0;
-  read $fl, my $buf, $len * $me->{ 'block_len' };
+  seek $fl, $self->{ 'db_begin' } + $min * $self->{ 'block_len' }, 0;
+  read $fl, my $buf, $len * $self->{ 'block_len' };
   close $fl;
 
-  return $me->search_db( $buf, $ipn, 0, $len - 1 );
+  return $self->search_db( $buf, $ipn, 0, $len - 1 );
 }
 
 sub search_idx {
-  my $me = shift;
+  my $self = shift;
   my $ipn = shift;
   my $min = shift;
   my $max = shift;
@@ -136,7 +136,7 @@ sub search_idx {
   while ( $max - $min > 8 ) {
     $offset = ( $min + $max ) >> 1;
 
-    if ( encode_utf8($ipn) gt encode_utf8(substr( ( $me->{ 'm_idx_str' } ), $offset * 4, 4 ) )) {
+    if ( encode_utf8($ipn) gt encode_utf8(substr( ( $self->{ 'm_idx_str' } ), $offset * 4, 4 ) )) {
       $min = $offset;
     }
     else {
@@ -144,14 +144,14 @@ sub search_idx {
     }
   }
 
-  while ( encode_utf8($ipn) gt encode_utf8( substr( $me->{ 'm_idx_str' }, $min * 4, 4 ) ) && $min++ < $max ) {
+  while ( encode_utf8($ipn) gt encode_utf8( substr( $self->{ 'm_idx_str' }, $min * 4, 4 ) ) && $min++ < $max ) {
   }
 
   return  $min;
 }
 
 sub search_db {
-  my $me = shift;
+  my $self = shift;
   my $str = shift;
   my $ipn = shift;
   my $min = shift;
@@ -163,7 +163,7 @@ sub search_db {
     while ( $max - $min > 8 ){
       $offset = ( $min + $max ) >> 1;
 
-      if ( encode_utf8( $ipn ) gt encode_utf8( substr( $str, $offset * $me->{ 'block_len' }, 3 ) ) ) {
+      if ( encode_utf8( $ipn ) gt encode_utf8( substr( $str, $offset * $self->{ 'block_len' }, 3 ) ) ) {
         $min = $offset;
       }
       else {
@@ -171,13 +171,13 @@ sub search_db {
       }
     }
 
-    while ( encode_utf8( $ipn ) ge encode_utf8( substr( $str, $min * $me->{ 'block_len' }, 3 ) ) && $min++ < $max ){}
+    while ( encode_utf8( $ipn ) ge encode_utf8( substr( $str, $min * $self->{ 'block_len' }, 3 ) ) && $min++ < $max ){}
   }
   else {
-    return hex( bin2hex( substr( $str, $min * $me->{ 'block_len' } + 3 , 3 ) ) );
+    return hex( bin2hex( substr( $str, $min * $self->{ 'block_len' } + 3 , 3 ) ) );
   }
 
-  return hex( bin2hex( substr( $str, $min * $me->{ 'block_len' } - $me->{ 'id_len' }, $me->{ 'id_len' } ) ) );
+  return hex( bin2hex( substr( $str, $min * $self->{ 'block_len' } - $self->{ 'id_len' }, $self->{ 'id_len' } ) ) );
 }
 
 sub bin2hex {
@@ -196,16 +196,16 @@ sub ip2long {
 }
 
 sub parse_city {
-  my $me   = shift;
+  my $self   = shift;
   my $seek = shift;
 
-  open( my $fl, $me->{ 'db_file' } ) || croak( 'Could not open db file' );
+  open( my $fl, $self->{ 'db_file' } ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
-  seek $fl, $seek + $me->{cities_begin}, 0;
-  read $fl, my $buf, $me->{ 'max_city' };
+  seek $fl, $seek + $self->{cities_begin}, 0;
+  read $fl, my $buf, $self->{ 'max_city' };
   close $fl;
 
-  my $info = extended_unpack( $me->{pack}[2], $buf );
+  my $info = extended_unpack( $self->{pack}[2], $buf );
   return unless $info && $info->[5];
 
   return $info->[5];
