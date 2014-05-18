@@ -11,7 +11,10 @@ use Encode;
 use Socket;
 use POSIX;
 
-use fields qw( db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len block_len max_region max_city db_begin regions_begin cities_begin );
+use fields qw(
+  db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len
+  block_len max_region max_city db_begin regions_begin cities_begin
+);
 
 sub new {
   my $class = shift;
