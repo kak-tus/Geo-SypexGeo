@@ -36,15 +36,15 @@ sub new {
 
   my $info_str = substr( $header, 3, HEADER_LENGTH - 3 );
   my @info = unpack 'CNCCCnnNCnnNNnNn', $info_str;
-  croak 'File header format is wrong' if $info[ 4 ] * $info[ 5 ] * $info[ 6 ] * $info[ 7 ] * $info[ 1 ] * $info[ 8 ] == 0;
+  croak 'File header format is wrong' if $info[4] * $info[5] * $info[6] * $info[7] * $info[1] * $info[8] == 0;
 
   if ( $info[15] ) {
     read $fl, my $pack, $info[15];
     $self->{pack} = [ split "\0", $pack ];
   }
 
-  read $fl, $self->{b_idx_str}, $info[ 4 ] * 4;
-  read $fl, $self->{m_idx_str}, $info[ 5 ] * 4;
+  read $fl, $self->{b_idx_str}, $info[4] * 4;
+  read $fl, $self->{m_idx_str}, $info[5] * 4;
 
   $self->{range}        = $info[6];
   $self->{b_idx_len}    = $info[4];
@@ -60,7 +60,7 @@ sub new {
   $self->{db_begin} = tell $fl;
 
   $self->{regions_begin} = $self->{db_begin} + $self->{db_items} * $self->{block_len};
-  $self->{cities_begin} = $self->{regions_begin} + $info[ 11 ];
+  $self->{cities_begin}  = $self->{regions_begin} + $info[11];
 
   $self->{db_file} = $file;
 
@@ -70,20 +70,20 @@ sub new {
 }
 
 sub get_city {
-  my $self = shift;
+  my __PACKAGE__ $self = shift;
   my $ip = shift;
 
-  my $seek = $self->get_num( $ip );
+  my $seek = $self->get_num($ip);
   return unless $seek;
 
-  my $city = $self->parse_city( $seek );
+  my $city = $self->parse_city($seek);
   return unless $city;
 
-  return decode_utf8( $city );
+  return decode_utf8($city);
 }
 
 sub get_num {
-  my $self = shift;
+  my __PACKAGE__ $self = shift;
   my $ip = shift;
 
   my $ip1n;
@@ -92,23 +92,27 @@ sub get_num {
     $ip1n = int $ip;
   }
 
-  return undef if !$ip1n || $ip1n == 10 || $ip1n == 127 || $ip1n >= $self->{ 'b_idx_len' };
+  return undef if !$ip1n || $ip1n == 10 || $ip1n == 127 || $ip1n >= $self->{b_idx_len};
   my $ipn = ip2long( $ip );
   $ipn = pack( 'N', $ipn );
 
-  my @blocks = unpack "NN", substr( $self->{ 'b_idx_str' } , ( $ip1n - 1 ) * 4, 8 );
+  my @blocks = unpack "NN", substr( $self->{b_idx_str} , ( $ip1n - 1 ) * 4, 8 );
 
   my $min;
   my $max;
 
   if ( $blocks[1] - $blocks[0] > $self->{range} ) {
-    my $part = $self->search_idx( $ipn, floor( $blocks[ 0 ] / $self->{ 'range' } ), floor( $blocks[ 1 ] / $self->{ 'range' } ) - 1 );
+    my $part = $self->search_idx(
+      $ipn,
+      floor( $blocks[0] / $self->{'range'} ),
+      floor( $blocks[1] / $self->{'range'} ) - 1
+    );
 
-    $min = $part > 0 ? $part * $self->{ 'range' } : 0;
-    $max = $part > $self->{ 'm_idx_len' } ? $self->{ 'db_items' } : ( $part + 1 ) * $self->{ 'range' };
+    $min = $part > 0 ? $part * $self->{range} : 0;
+    $max = $part > $self->{m_idx_len} ? $self->{db_items} : ( $part + 1 ) * $self->{range};
 
-    $min = $blocks[ 0 ] if $min < $blocks[ 0 ];
-    $max = $blocks[ 1 ] if $max > $blocks[ 1];
+    $min = $blocks[0] if $min < $blocks[0];
+    $max = $blocks[1] if $max > $blocks[1];
   }
   else {
     $min = $blocks[0];
@@ -119,24 +123,24 @@ sub get_num {
 
   open( my $fl, $self->{ 'db_file' } ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
-  seek $fl, $self->{ 'db_begin' } + $min * $self->{ 'block_len' }, 0;
-  read $fl, my $buf, $len * $self->{ 'block_len' };
+  seek $fl, $self->{db_begin} + $min * $self->{block_len}, 0;
+  read $fl, my $buf, $len * $self->{block_len};
   close $fl;
 
   return $self->search_db( $buf, $ipn, 0, $len - 1 );
 }
 
 sub search_idx {
-  my $self = shift;
-  my $ipn = shift;
-  my $min = shift;
-  my $max = shift;
+  my __PACKAGE__ $self = shift;
+  my $ipn              = shift;
+  my $min              = shift;
+  my $max              = shift;
 
   my $offset;
   while ( $max - $min > 8 ) {
     $offset = ( $min + $max ) >> 1;
 
-    if ( encode_utf8($ipn) gt encode_utf8(substr( ( $self->{ 'm_idx_str' } ), $offset * 4, 4 ) )) {
+    if ( encode_utf8($ipn) gt encode_utf8( substr( ( $self->{m_idx_str} ), $offset * 4, 4 ) ) ) {
       $min = $offset;
     }
     else {
@@ -144,18 +148,18 @@ sub search_idx {
     }
   }
 
-  while ( encode_utf8($ipn) gt encode_utf8( substr( $self->{ 'm_idx_str' }, $min * 4, 4 ) ) && $min++ < $max ) {
+  while ( encode_utf8($ipn) gt encode_utf8( substr( $self->{m_idx_str}, $min * 4, 4 ) ) && $min++ < $max ) {
   }
 
   return  $min;
 }
 
 sub search_db {
-  my $self = shift;
-  my $str = shift;
-  my $ipn = shift;
-  my $min = shift;
-  my $max = shift;
+  my __PACKAGE__ $self = shift;
+  my $str              = shift;
+  my $ipn              = shift;
+  my $min              = shift;
+  my $max              = shift;
 
   if( $max - $min > 1 ) {
     $ipn = substr( $ipn, 1 );
@@ -163,7 +167,7 @@ sub search_db {
     while ( $max - $min > 8 ){
       $offset = ( $min + $max ) >> 1;
 
-      if ( encode_utf8( $ipn ) gt encode_utf8( substr( $str, $offset * $self->{ 'block_len' }, 3 ) ) ) {
+      if ( encode_utf8( $ipn ) gt encode_utf8( substr( $str, $offset * $self->{block_len}, 3 ) ) ) {
         $min = $offset;
       }
       else {
@@ -171,13 +175,13 @@ sub search_db {
       }
     }
 
-    while ( encode_utf8( $ipn ) ge encode_utf8( substr( $str, $min * $self->{ 'block_len' }, 3 ) ) && $min++ < $max ){}
+    while ( encode_utf8( $ipn ) ge encode_utf8( substr( $str, $min * $self->{block_len}, 3 ) ) && $min++ < $max ){}
   }
   else {
-    return hex( bin2hex( substr( $str, $min * $self->{ 'block_len' } + 3 , 3 ) ) );
+    return hex( bin2hex( substr( $str, $min * $self->{block_len} + 3 , 3 ) ) );
   }
 
-  return hex( bin2hex( substr( $str, $min * $self->{ 'block_len' } - $self->{ 'id_len' }, $self->{ 'id_len' } ) ) );
+  return hex( bin2hex( substr( $str, $min * $self->{block_len} - $self->{id_len}, $self->{id_len} ) ) );
 }
 
 sub bin2hex {
@@ -196,13 +200,13 @@ sub ip2long {
 }
 
 sub parse_city {
-  my $self   = shift;
+  my __PACKAGE__ $self   = shift;
   my $seek = shift;
 
-  open( my $fl, $self->{ 'db_file' } ) || croak( 'Could not open db file' );
+  open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
   seek $fl, $seek + $self->{cities_begin}, 0;
-  read $fl, my $buf, $self->{ 'max_city' };
+  read $fl, my $buf, $self->{max_city};
   close $fl;
 
   my $info = extended_unpack( $self->{pack}[2], $buf );
