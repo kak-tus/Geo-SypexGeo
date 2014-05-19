@@ -2,4 +2,6 @@ blib/
 Makefile
 pm_to_blib
 MANIFEST.bak
-
+Makefile.old
+MYMETA.json
+MYMETA.yml
