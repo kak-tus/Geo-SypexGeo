@@ -205,13 +205,26 @@ sub parse_city {
   my $seek             = shift;
   my $lang             = shift;
 
-  open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
-  binmode $fl, ':bytes';
-  seek $fl, $seek + $self->{cities_begin}, 0;
-  read $fl, my $buf, $self->{max_city};
-  close $fl;
+  my $info;
 
-  my $info = extended_unpack( $self->{pack}[2], $buf );
+  if ( $seek < $self->{country_size} ) {
+    open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
+    binmode $fl, ':bytes';
+    seek $fl, $seek + $self->{cities_begin}, 0;
+    read $fl, my $buf, $self->{max_country};
+    close $fl;
+
+    $info = extended_unpack( $self->{pack}[0], $buf );
+  }
+  else {
+    open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
+    binmode $fl, ':bytes';
+    seek $fl, $seek + $self->{cities_begin}, 0;
+    read $fl, my $buf, $self->{max_city};
+    close $fl;
+
+    $info = extended_unpack( $self->{pack}[2], $buf );
+  }
 
   return unless $info;
 
@@ -253,6 +266,7 @@ sub extended_unpack {
     elsif ( $flag eq 's' ) {
     }
     elsif ( $flag eq 'n' ) {
+      $len = $num;
     }
     elsif ( $flag eq 'S' ) {
       $len = 2;
