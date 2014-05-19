@@ -1,6 +1,6 @@
 package Geo::SypexGeo;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 use strict;
 use warnings;
@@ -71,12 +71,13 @@ sub new {
 
 sub get_city {
   my __PACKAGE__ $self = shift;
-  my $ip = shift;
+  my $ip               = shift;
+  my $lang             = shift;
 
   my $seek = $self->get_num($ip);
   return unless $seek;
 
-  my $city = $self->parse_city($seek);
+  my $city = $self->parse_city( $seek, $lang );
   return unless $city;
 
   return decode_utf8($city);
@@ -200,8 +201,9 @@ sub ip2long {
 }
 
 sub parse_city {
-  my __PACKAGE__ $self   = shift;
-  my $seek = shift;
+  my __PACKAGE__ $self = shift;
+  my $seek             = shift;
+  my $lang             = shift;
 
   open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
   binmode $fl, ':bytes';
@@ -210,9 +212,20 @@ sub parse_city {
   close $fl;
 
   my $info = extended_unpack( $self->{pack}[2], $buf );
-  return unless $info && $info->[5];
 
-  return $info->[5];
+  return unless $info;
+
+  # с передачей языка - не очень хорошая идея
+  my $city;
+  if ( $lang && $lang eq 'en' ) {
+    $city = $info->[6];
+  }
+  else {
+    $city = $info->[5];
+  }
+  return unless $city;
+
+  return $city;
 }
 
 sub extended_unpack {
@@ -322,23 +335,26 @@ sub extended_unpack {
 
 =head1 NAME
 
-Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database
+Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database v.2
 
 =head1 SYNOPSIS
 
  use Geo::SypexGeo;
  my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
+
  my $city = $geo->get_city( '87.250.250.203' );
+ say $city;
+
+ $city = $geo->get_city( '93.191.14.81', 'en' );
+ say $city;
 
 =head1 DESCRIPTION
 
-Sypex Geo is a database to detect cities by IP.
+L<Sypex Geo|http://sypexgeo.net/> is a database to detect cities by IP.
 
-http://sypexgeo.net/
+The database of IPs is included into distribution, but it is better to download latest version at L<download page|http://sypexgeo.net/ru/download/>.
 
-The database of IPs is included into distribution, but it is better to download latest version at http://sypexgeo.net/ru/download/.
-
-The database is availible now only with a names of the cities in Russian language.
+The database is availible with a names of the cities in Russian and English languages.
 
 This module now is detect only city name and don't use any features to speed up of detection. In the future I plan to add more functionality.
 
@@ -353,7 +369,7 @@ Andrey Kuzmin, E<lt>kak-tus@mail.ruE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Andrey Kuzmin
+Copyright (C) 2014 by Andrey Kuzmin
 
 This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
