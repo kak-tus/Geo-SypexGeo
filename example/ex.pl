@@ -21,3 +21,6 @@ say $city;
 $city = $geo->get_city( '93.191.14.81' );
 say $city;
 
+my $country = $geo->get_country( '93.191.14.81' );
+say $country;
+

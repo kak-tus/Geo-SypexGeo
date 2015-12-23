@@ -1,10 +1,11 @@
 package Geo::SypexGeo;
 
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 
 use strict;
 use warnings;
 use utf8;
+use v5.10;
 
 use Carp qw( croak );
 use Encode;
@@ -21,6 +22,31 @@ use fields qw(
 use constant {
   HEADER_LENGTH => 40,
 };
+
+my @COUNTRY_ISO_MAP = (
+  '',   'ap', 'eu', 'ad', 'ae', 'af', 'ag', 'ai', 'al', 'am', 'cw', 'ao',
+  'aq', 'ar', 'as', 'at', 'au', 'aw', 'az', 'ba', 'bb', 'bd', 'be', 'bf',
+  'bg', 'bh', 'bi', 'bj', 'bm', 'bn', 'bo', 'br', 'bs', 'bt', 'bv', 'bw',
+  'by', 'bz', 'ca', 'cc', 'cd', 'cf', 'cg', 'ch', 'ci', 'ck', 'cl', 'cm',
+  'cn', 'co', 'cr', 'cu', 'cv', 'cx', 'cy', 'cz', 'de', 'dj', 'dk', 'dm',
+  'do', 'dz', 'ec', 'ee', 'eg', 'eh', 'er', 'es', 'et', 'fi', 'fj', 'fk',
+  'fm', 'fo', 'fr', 'sx', 'ga', 'gb', 'gd', 'ge', 'gf', 'gh', 'gi', 'gl',
+  'gm', 'gn', 'gp', 'gq', 'gr', 'gs', 'gt', 'gu', 'gw', 'gy', 'hk', 'hm',
+  'hn', 'hr', 'ht', 'hu', 'id', 'ie', 'il', 'in', 'io', 'iq', 'ir', 'is',
+  'it', 'jm', 'jo', 'jp', 'ke', 'kg', 'kh', 'ki', 'km', 'kn', 'kp', 'kr',
+  'kw', 'ky', 'kz', 'la', 'lb', 'lc', 'li', 'lk', 'lr', 'ls', 'lt', 'lu',
+  'lv', 'ly', 'ma', 'mc', 'md', 'mg', 'mh', 'mk', 'ml', 'mm', 'mn', 'mo',
+  'mp', 'mq', 'mr', 'ms', 'mt', 'mu', 'mv', 'mw', 'mx', 'my', 'mz', 'na',
+  'nc', 'ne', 'nf', 'ng', 'ni', 'nl', 'no', 'np', 'nr', 'nu', 'nz', 'om',
+  'pa', 'pe', 'pf', 'pg', 'ph', 'pk', 'pl', 'pm', 'pn', 'pr', 'ps', 'pt',
+  'pw', 'py', 'qa', 're', 'ro', 'ru', 'rw', 'sa', 'sb', 'sc', 'sd', 'se',
+  'sg', 'sh', 'si', 'sj', 'sk', 'sl', 'sm', 'sn', 'so', 'sr', 'st', 'sv',
+  'sy', 'sz', 'tc', 'td', 'tf', 'tg', 'th', 'tj', 'tk', 'tm', 'tn', 'to',
+  'tl', 'tr', 'tt', 'tv', 'tw', 'tz', 'ua', 'ug', 'um', 'us', 'uy', 'uz',
+  'va', 'vc', 've', 'vg', 'vi', 'vn', 'vu', 'wf', 'ws', 'ye', 'yt', 'rs',
+  'za', 'zm', 'me', 'zw', 'a1', 'xk', 'o1', 'ax', 'gg', 'im', 'je', 'bl',
+  'mf', 'bq', 'ss'
+);
 
 sub new {
   my $class = shift;
@@ -77,10 +103,33 @@ sub get_city {
   my $seek = $self->get_num($ip);
   return unless $seek;
 
-  my $city = $self->parse_city( $seek, $lang );
+  my $info = $self->parse_info( $seek, $lang );
+  return unless $info;
+
+  my $city;
+  if ( $lang && $lang eq 'en' ) {
+    $city = $info->[6];
+  }
+  else {
+    $city = $info->[5];
+  }
   return unless $city;
 
   return decode_utf8($city);
+}
+
+sub get_country {
+  my __PACKAGE__ $self = shift;
+  my $ip = shift;
+
+  my $seek = $self->get_num($ip);
+  return unless $seek;
+
+  my $info = $self->parse_info($seek);
+  return unless $info;
+
+  my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  return $country;
 }
 
 sub get_num {
@@ -200,15 +249,14 @@ sub ip2long {
   return unpack( 'l*', pack( 'l*', unpack( 'N*', inet_aton( shift ) ) ) );
 }
 
-sub parse_city {
+sub parse_info {
   my __PACKAGE__ $self = shift;
-  my $seek             = shift;
-  my $lang             = shift;
+  my $seek = shift;
 
   my $info;
 
   if ( $seek < $self->{country_size} ) {
-    open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
+    open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
     read $fl, my $buf, $self->{max_country};
@@ -217,7 +265,7 @@ sub parse_city {
     $info = extended_unpack( $self->{pack}[0], $buf );
   }
   else {
-    open( my $fl, $self->{db_file} ) || croak( 'Could not open db file' );
+    open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
     read $fl, my $buf, $self->{max_city};
@@ -226,19 +274,12 @@ sub parse_city {
     $info = extended_unpack( $self->{pack}[2], $buf );
   }
 
-  return unless $info;
-
-  # с передачей языка - не очень хорошая идея
-  my $city;
-  if ( $lang && $lang eq 'en' ) {
-    $city = $info->[6];
+  if ($info) {
+    return $info;
   }
   else {
-    $city = $info->[5];
+    return;
   }
-  return unless $city;
-
-  return $city;
 }
 
 sub extended_unpack {
@@ -361,6 +402,9 @@ Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database v.2
 
  $city = $geo->get_city( '93.191.14.81', 'en' );
  say $city;
+
+ my $country = $geo->get_country( '87.250.250.203' );
+ say $country; // ru
 
 =head1 DESCRIPTION
 
