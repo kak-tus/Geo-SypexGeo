@@ -1,6 +1,6 @@
 package Geo::SypexGeo;
 
-our $VERSION = '0.4';
+our $VERSION = '0.5';
 
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ use Text::Trim;
 use fields qw(
   db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len
   block_len max_region max_city db_begin regions_begin cities_begin
-  max_country country_size pack
+  max_country country_size pack info
 );
 
 use constant {
@@ -100,10 +100,7 @@ sub get_city {
   my $ip               = shift;
   my $lang             = shift;
 
-  my $seek = $self->get_num($ip);
-  return unless $seek;
-
-  my $info = $self->parse_info( $seek, $lang );
+  my $info = $self->{info} || $self->get_info($ip, $lang);
   return unless $info;
 
   my $city;
@@ -122,14 +119,22 @@ sub get_country {
   my __PACKAGE__ $self = shift;
   my $ip = shift;
 
-  my $seek = $self->get_num($ip);
-  return unless $seek;
-
-  my $info = $self->parse_info($seek);
+  my $info = $self->{info} || $self->get_info($ip);
   return unless $info;
 
   my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
   return $country;
+}
+
+sub get_info {
+  my __PACKAGE__ $self = shift;
+  my $ip = shift;
+  my $lang = shift;
+  my $seek = $self->get_num($ip);
+  return unless $seek;
+
+  $self->{info} = $self->parse_info($seek, $lang);
+  return $self->{info};
 }
 
 sub get_num {
