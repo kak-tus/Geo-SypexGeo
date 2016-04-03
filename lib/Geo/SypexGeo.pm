@@ -266,7 +266,7 @@ sub parse_info {
     open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
-    read $fl, my $buf, $self->{max_region};
+    read $fl, my $buf, $self->{max_country};
     close $fl;
 
     $info = extended_unpack( $self->{pack}[0], $buf );
@@ -275,7 +275,7 @@ sub parse_info {
     open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
-    read $fl, my $buf, $self->{max_region};
+    read $fl, my $buf, $self->{max_city};
     close $fl;
 
     $info = extended_unpack( $self->{pack}[2], $buf );
