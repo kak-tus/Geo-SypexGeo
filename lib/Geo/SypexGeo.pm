@@ -16,7 +16,7 @@ use Text::Trim;
 use fields qw(
   db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len
   block_len max_region max_city db_begin regions_begin cities_begin
-  max_country country_size pack info
+  max_country country_size pack info lang
 );
 
 use constant {
@@ -97,11 +97,8 @@ sub new {
 
 sub get_city {
   my __PACKAGE__ $self = shift;
-  my $ip               = shift;
-  my $lang             = shift;
-
-  my $info = $self->{info} || $self->get_info($ip, $lang);
-  return unless $info;
+  my $info = $self->{info} || return;
+  my $lang = $self->{lang};
 
   my $city;
   if ( $lang && $lang eq 'en' ) {
@@ -117,24 +114,29 @@ sub get_city {
 
 sub get_country {
   my __PACKAGE__ $self = shift;
-  my $ip = shift;
-
-  my $info = $self->{info} || $self->get_info($ip);
-  return unless $info;
+  my $info = $self->{info} || return;
 
   my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
   return $country;
 }
 
-sub get_info {
+sub get_coordinates {
+	my __PACKAGE__ $self = shift;
+	my $info = $self->{info} || return;
+	return ($info->[3], $info->[4]);
+}
+
+sub parse {
   my __PACKAGE__ $self = shift;
   my $ip = shift;
   my $lang = shift;
+  $self->{lang} = $lang;
+  $self->{info} = undef;
   my $seek = $self->get_num($ip);
   return unless $seek;
 
   $self->{info} = $self->parse_info($seek, $lang);
-  return $self->{info};
+  return 1;
 }
 
 sub get_num {
@@ -264,7 +266,7 @@ sub parse_info {
     open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
-    read $fl, my $buf, $self->{max_country};
+    read $fl, my $buf, $self->{max_region};
     close $fl;
 
     $info = extended_unpack( $self->{pack}[0], $buf );
@@ -273,7 +275,7 @@ sub parse_info {
     open( my $fl, $self->{db_file} ) || croak('Could not open db file');
     binmode $fl, ':bytes';
     seek $fl, $seek + $self->{cities_begin}, 0;
-    read $fl, my $buf, $self->{max_city};
+    read $fl, my $buf, $self->{max_region};
     close $fl;
 
     $info = extended_unpack( $self->{pack}[2], $buf );
@@ -402,14 +404,18 @@ Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database v.2
  use Geo::SypexGeo;
  my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
 
- my $city = $geo->get_city( '87.250.250.203' );
+ $geo->parse( '87.250.250.203' ) or die "Cant parse 87.250.250.203";
+ my $city = $geo->get_city();
  say $city;
-
- $city = $geo->get_city( '93.191.14.81', 'en' );
- say $city;
-
- my $country = $geo->get_country( '87.250.250.203' );
+ my $country = $geo->get_country( );
  say $country; // ru
+
+ $geo->parse( '93.191.14.81', 'en' ) or die "Cant parse 93.191.14.81";
+ $city = $geo->get_city( );
+ say $city;
+ my ($latitude, $longitude) = $geo->get_coordinates();
+ say "Latitude: $latitude Longitude: $longitude";
+
 
 =head1 DESCRIPTION
 
