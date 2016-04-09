@@ -12,7 +12,7 @@ use Encode;
 use Socket;
 use POSIX;
 use Text::Trim;
-use Geo::SypexParse;
+use Geo::SypexGeo::Parse;
 
 use fields qw(
   db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len
@@ -104,7 +104,7 @@ sub parse {
   return unless $seek;
 
   my $info = $self->parse_info($seek, $lang);
-  return Geo::SypexParse->new($info, $lang);
+  return Geo::SypexGeo::Parse->new($info, $lang);
 }
 
 sub get_num {
