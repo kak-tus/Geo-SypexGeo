@@ -26,12 +26,11 @@ say $info->country();
 my ( $latitude, $longitude ) = $info->coordinates();
 say "Latitude: $latitude Longitude: $longitude";
 
-## deprecated method (will be removed in futures versions)
+## deprecated method (will be removed in future versions)
 say $geo->get_city( '87.250.250.203', 'en' );
 
-## deprecated method (will be removed in futures versions)
+## deprecated method (will be removed in future versions)
 say $geo->get_city('93.191.14.81');
 
-## deprecated method (will be removed in futures versions)
+## deprecated method (will be removed in future versions)
 say $geo->get_country('93.191.14.81');
-
