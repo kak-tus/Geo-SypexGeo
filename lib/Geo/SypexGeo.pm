@@ -96,6 +96,43 @@ sub new {
   return $self;
 }
 
+sub get_city {
+  my __PACKAGE__ $self = shift;
+  my $ip               = shift;
+  my $lang             = shift;
+
+  my $seek = $self->get_num($ip);
+  return unless $seek;
+
+  my $info = $self->parse_info( $seek, $lang );
+  return unless $info;
+
+  my $city;
+  if ( $lang && $lang eq 'en' ) {
+    $city = $info->[6];
+  }
+  else {
+    $city = $info->[5];
+  }
+  return unless $city;
+
+  return decode_utf8($city);
+}
+
+sub get_country {
+  my __PACKAGE__ $self = shift;
+  my $ip = shift;
+
+  my $seek = $self->get_num($ip);
+  return unless $seek;
+
+  my $info = $self->parse_info($seek);
+  return unless $info;
+
+  my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  return $country;
+}
+
 sub parse {
   my __PACKAGE__ $self = shift;
   my $ip = shift;
