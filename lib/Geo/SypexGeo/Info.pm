@@ -1,4 +1,4 @@
-package Geo::SypexGeo::Parse;
+package Geo::SypexGeo::Info;
 
 use strict;
 use warnings;
