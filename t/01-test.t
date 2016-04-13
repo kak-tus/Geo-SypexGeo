@@ -4,5 +4,5 @@ use utf8;
 
 use Test::More tests => 1;
 
-use_ok( 'Geo::SypexGeo' );
+use_ok('Geo::SypexGeo');
 
