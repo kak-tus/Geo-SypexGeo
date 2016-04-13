@@ -42,7 +42,7 @@ sub new {
   return $self;
 }
 
-sub get_city {
+sub city {
   my __PACKAGE__ $self = shift;
   my $info = $self->{info} || return;
   my $lang = $self->{lang};
@@ -59,7 +59,7 @@ sub get_city {
   return decode_utf8($city);
 }
 
-sub get_country {
+sub country {
   my __PACKAGE__ $self = shift;
   my $info = $self->{info} || return;
 
@@ -67,7 +67,7 @@ sub get_country {
   return $country;
 }
 
-sub get_coordinates {
+sub coordinates {
   my __PACKAGE__ $self = shift;
   my $info = $self->{info} || return;
   return ( $info->[3], $info->[4] );
