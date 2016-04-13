@@ -1,6 +1,6 @@
 package Geo::SypexGeo;
 
-our $VERSION = '0.4';
+our $VERSION = '0.5';
 
 use strict;
 use warnings;
@@ -12,6 +12,7 @@ use Encode;
 use Socket;
 use POSIX;
 use Text::Trim;
+use Geo::SypexGeo::Info;
 
 use fields qw(
   db_file b_idx_str m_idx_str range b_idx_len m_idx_len db_items id_len
@@ -130,6 +131,17 @@ sub get_country {
 
   my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
   return $country;
+}
+
+sub parse {
+  my __PACKAGE__ $self = shift;
+  my $ip = shift;
+  my $lang = shift;
+  my $seek = $self->get_num($ip);
+  return unless $seek;
+
+  my $info = $self->parse_info($seek, $lang);
+  return Geo::SypexGeo::Info->new($info, $lang);
 }
 
 sub get_num {
@@ -394,17 +406,29 @@ Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database v.2
 
 =head1 SYNOPSIS
 
- use Geo::SypexGeo;
- my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
+  use Geo::SypexGeo;
+  my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
 
- my $city = $geo->get_city( '87.250.250.203' );
- say $city;
+  # Method parse return Geo::SypexGeo::Info object
+  $info = $geo->parse( '87.250.250.203', 'en' )
+    or die "Cant parse 87.250.250.203";
+  say $info->city();
 
- $city = $geo->get_city( '93.191.14.81', 'en' );
- say $city;
+  $info = $geo->parse('93.191.14.81') or die "Cant parse 93.191.14.81";
+  say $info->city();
+  say $info->country();
 
- my $country = $geo->get_country( '87.250.250.203' );
- say $country; // ru
+  my ( $latitude, $longitude ) = $info->coordinates();
+  say "Latitude: $latitude Longitude: $longitude";
+
+  ## deprecated method (will be removed in future versions)
+  say $geo->get_city( '87.250.250.203', 'en' );
+
+  ## deprecated method (will be removed in future versions)
+  say $geo->get_city('93.191.14.81');
+
+  ## deprecated method (will be removed in future versions)
+  say $geo->get_country('93.191.14.81');
 
 =head1 DESCRIPTION
 
@@ -424,6 +448,10 @@ at https://github.com/kak-tus/Geo-SypexGeo
 =head1 AUTHOR
 
 Andrey Kuzmin, E<lt>kak-tus@mail.ruE<gt>
+
+=head1 CREDITS
+
+vrag86
 
 =head1 COPYRIGHT AND LICENSE
 
