@@ -14,13 +14,18 @@ binmode STDOUT, ':utf8';
 my $geo = Geo::SypexGeo->new( 'data/SxGeoCity.dat' );
 
 my $city;
+my $parse;
 
-$city = $geo->get_city( '87.250.250.203', 'en' );
+$parse = $geo->parse( '87.250.250.203', 'en' ) or die "Cant parse 87.250.250.203";
+$city = $parse->get_city();
 say $city;
 
-$city = $geo->get_city( '93.191.14.81' );
+$parse = $geo->parse( '93.191.14.81' ) or die "Cant parse 93.191.14.81";
+$city = $parse->get_city();
 say $city;
-
-my $country = $geo->get_country( '93.191.14.81' );
+my $country = $parse->get_country();
 say $country;
+my ($latitude, $longitude) = $parse->get_coordinates();
+say "Latitude: $latitude Longitude: $longitude";
+
 
