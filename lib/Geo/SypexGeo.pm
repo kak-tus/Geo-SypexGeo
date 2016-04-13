@@ -406,25 +406,29 @@ Geo::SypexGeo - API to detect cities by IP thru Sypex Geo database v.2
 
 =head1 SYNOPSIS
 
- use Geo::SypexGeo;
- my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
+  use Geo::SypexGeo;
+  my $geo = Geo::SypexGeo->new( './SxGeoCity.dat' );
 
- my $city;
- my $parse;
+  # Method parse return Geo::SypexGeo::Info object
+  $info = $geo->parse( '87.250.250.203', 'en' )
+    or die "Cant parse 87.250.250.203";
+  say $info->city();
 
- #Method parse return Geo::SypexParse object
- $parse = $geo->parse( '87.250.250.203', 'en' ) or die "Cant parse 87.250.250.203";
- $city = $parse->get_city();
- say $city;
+  $info = $geo->parse('93.191.14.81') or die "Cant parse 93.191.14.81";
+  say $info->city();
+  say $info->country();
 
- $parse = $geo->parse( '93.191.14.81' ) or die "Cant parse 93.191.14.81";
- $city = $parse->get_city();
- say $city;
- my $country = $parse->get_country();
- say $country;
- my ($latitude, $longitude) = $parse->get_coordinates();
- say "Latitude: $latitude Longitude: $longitude";
+  my ( $latitude, $longitude ) = $info->coordinates();
+  say "Latitude: $latitude Longitude: $longitude";
 
+  ## deprecated method (will be removed in futures versions)
+  say $geo->get_city( '87.250.250.203', 'en' );
+
+  ## deprecated method (will be removed in futures versions)
+  say $geo->get_city('93.191.14.81');
+
+  ## deprecated method (will be removed in futures versions)
+  say $geo->get_country('93.191.14.81');
 
 =head1 DESCRIPTION
 
@@ -444,6 +448,10 @@ at https://github.com/kak-tus/Geo-SypexGeo
 =head1 AUTHOR
 
 Andrey Kuzmin, E<lt>kak-tus@mail.ruE<gt>
+
+=head1 CREDITS
+
+vrag86
 
 =head1 COPYRIGHT AND LICENSE
 
