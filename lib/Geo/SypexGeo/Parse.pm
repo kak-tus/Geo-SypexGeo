@@ -34,12 +34,12 @@ my @COUNTRY_ISO_MAP = (
 );
 
 sub new {
-	my ($class, $info, $lang) = @_;
-	my $self = {};
-	$self->{lang} = $lang;
-	$self->{info} = $info;
-	bless $self, $class;
-	return $self;
+  my ( $class, $info, $lang ) = @_;
+  my $self = {};
+  $self->{lang} = $lang;
+  $self->{info} = $info;
+  bless $self, $class;
+  return $self;
 }
 
 sub get_city {
@@ -68,10 +68,9 @@ sub get_country {
 }
 
 sub get_coordinates {
-	my __PACKAGE__ $self = shift;
-	my $info = $self->{info} || return;
-	return ($info->[3], $info->[4]);
+  my __PACKAGE__ $self = shift;
+  my $info = $self->{info} || return;
+  return ( $info->[3], $info->[4] );
 }
-
 
 1;
