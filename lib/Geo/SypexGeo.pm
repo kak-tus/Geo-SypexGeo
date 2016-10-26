@@ -129,7 +129,13 @@ sub get_country {
   my $info = $self->parse_info($seek);
   return unless $info;
 
-  my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  my $country;
+  if ($info->[1] =~ /\D/) {
+    $country = $info->[1];
+  } else {
+    $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  }
+  
   return $country;
 }
 
