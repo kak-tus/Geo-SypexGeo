@@ -459,6 +459,7 @@ Andrey Kuzmin, E<lt>kak-tus@mail.ruE<gt>
 =head1 CREDITS
 
 vrag86
+dimonchik-com
 
 =head1 COPYRIGHT AND LICENSE
 
