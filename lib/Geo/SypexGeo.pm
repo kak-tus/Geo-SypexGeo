@@ -130,12 +130,13 @@ sub get_country {
   return unless $info;
 
   my $country;
-  if ($info->[1] =~ /\D/) {
+  if ( $info->[1] =~ /\D/ ) {
     $country = $info->[1];
-  } else {
+  }
+  else {
     $country = $COUNTRY_ISO_MAP[ $info->[1] ];
   }
-  
+
   return $country;
 }
 
