@@ -63,7 +63,14 @@ sub country {
   my __PACKAGE__ $self = shift;
   my $info = $self->{info} || return;
 
-  my $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  my $country;
+  if ( $info->[1] =~ /\D/ ) {
+    $country = $info->[1];
+  }
+  else {
+    $country = $COUNTRY_ISO_MAP[ $info->[1] ];
+  }
+
   return $country;
 }
 
