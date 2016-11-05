@@ -1,6 +1,6 @@
 package Geo::SypexGeo;
 
-our $VERSION = '0.7';
+our $VERSION = '0.8';
 
 use strict;
 use warnings;
